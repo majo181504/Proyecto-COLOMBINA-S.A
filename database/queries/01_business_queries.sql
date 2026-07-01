@@ -1,0 +1,364 @@
+-- ============================================================
+-- COLOMBINA S.A. — CONSULTAS ESTRATÉGICAS PARA TOMA DE DECISIONES
+-- Base de datos: colombina-db2
+-- Enfoque: Revenue, Rentabilidad, Decisiones Ejecutivas
+-- ============================================================
+
+
+-- ============================================================
+-- CONSULTA 1: RANKING DE PRODUCTOS POR REVENUE TOTAL
+-- Decisión: ¿En qué productos debería invertir más Colombina?
+-- Identifica los productos estrella que generan más ingresos.
+-- ============================================================
+SELECT
+    p.id_producto,
+    p.nombre_producto,
+    c.nombre_categoria,
+    m.nombre_marca,
+    COUNT(dv.id_detalle_venta)          AS veces_vendido,
+    SUM(dv.unidades)                    AS unidades_totales,
+    ROUND(AVG(dv.precio_historico), 2)  AS precio_promedio,
+    ROUND(SUM(dv.subtotal), 2)          AS revenue_total,
+    ROUND(SUM(dv.subtotal) * 100.0 /
+        SUM(SUM(dv.subtotal)) OVER (), 2) AS porcentaje_revenue
+FROM detalle_venta dv
+JOIN productos p     ON dv.id_prod       = p.id_producto
+JOIN categoria c     ON p.cate_id        = c.id_categoria
+JOIN marca m         ON p.marca_id       = m.id_marca
+GROUP BY p.id_producto, p.nombre_producto, c.nombre_categoria, m.nombre_marca
+ORDER BY revenue_total DESC
+LIMIT 15;
+
+
+-- ============================================================
+-- CONSULTA 2: PROYECCIÓN DE REVENUE PARA 2025
+-- Decisión: ¿Cuánto podría facturar Colombina en 2025?
+
+-- ============================================================
+-- CONSULTA 2 SIMPLIFICADA: Proyección 2025 basada en crecimiento anual real
+WITH revenue_anual AS (
+    SELECT
+        EXTRACT(YEAR FROM ov.fecha_venta)  AS anio,
+        ROUND(SUM(dv.subtotal), 2)         AS revenue_total
+    FROM orden_venta ov
+    JOIN detalle_venta dv ON ov.id_venta = dv.id_venta
+    GROUP BY EXTRACT(YEAR FROM ov.fecha_venta)
+)
+SELECT
+    MAX(CASE WHEN anio = 2023 THEN revenue_total END)  AS revenue_2023,
+    MAX(CASE WHEN anio = 2024 THEN revenue_total END)  AS revenue_2024,
+    ROUND(
+        (MAX(CASE WHEN anio = 2024 THEN revenue_total END) -
+         MAX(CASE WHEN anio = 2023 THEN revenue_total END)) * 100.0 /
+        NULLIF(MAX(CASE WHEN anio = 2023 THEN revenue_total END), 0)
+    , 2)                                               AS crecimiento_2023_2024_pct,
+    ROUND(
+        MAX(CASE WHEN anio = 2024 THEN revenue_total END) *
+        (1 + (
+            (MAX(CASE WHEN anio = 2024 THEN revenue_total END) -
+             MAX(CASE WHEN anio = 2023 THEN revenue_total END)) /
+            NULLIF(MAX(CASE WHEN anio = 2023 THEN revenue_total END), 0)
+        ))
+    , 2)                                               AS proyeccion_revenue_2025,
+    ROUND(
+        MAX(CASE WHEN anio = 2024 THEN revenue_total END) *
+        (
+            (MAX(CASE WHEN anio = 2024 THEN revenue_total END) -
+             MAX(CASE WHEN anio = 2023 THEN revenue_total END)) /
+            NULLIF(MAX(CASE WHEN anio = 2023 THEN revenue_total END), 0)
+        )
+    , 2)                                               AS incremento_esperado_2025
+FROM revenue_anual;
+
+
+
+-- ============================================================
+-- CONSULTA 3: RENTABILIDAD POR PLANTA (MARGEN BRUTO)
+-- Decisión: ¿Cuál es la planta más rentable de Colombina?
+-- Compara el costo de compras vs ingresos por ventas por planta.
+-- ============================================================
+WITH costos_planta AS (
+    SELECT
+        i.id_planta,
+        SUM(dc.precio_historico * dc.cantidad_prods) AS costo_total_compras
+    FROM inventario i
+    JOIN detalle_compra dc ON dc.id_prod = i.id_prod
+    GROUP BY i.id_planta
+),
+ventas_planta AS (
+    SELECT
+        i.id_planta,
+        SUM(dv.subtotal) AS revenue_ventas
+    FROM inventario i
+    JOIN detalle_venta dv ON dv.id_prod = i.id_prod
+    GROUP BY i.id_planta
+)
+SELECT
+    pl.id_planta,
+    pl.tipo_planta,
+    ci.nombre_ciudad,
+    pa.nombre_pais,
+    ROUND(vp.revenue_ventas, 2)                              AS revenue_total,
+    ROUND(cp.costo_total_compras, 2)                         AS costo_total,
+    ROUND(vp.revenue_ventas - cp.costo_total_compras, 2)     AS margen_bruto,
+    ROUND((vp.revenue_ventas - cp.costo_total_compras) * 100.0
+          / NULLIF(vp.revenue_ventas, 0), 2)                 AS margen_bruto_pct
+FROM planta pl
+JOIN ciudad ci           ON pl.id_ciudad   = ci.id_ciudad
+JOIN pais pa             ON ci.id_pais     = pa.id_pais
+LEFT JOIN costos_planta cp ON pl.id_planta = cp.id_planta
+LEFT JOIN ventas_planta vp ON pl.id_planta = vp.id_planta
+WHERE vp.revenue_ventas IS NOT NULL
+ORDER BY margen_bruto_pct DESC;
+
+
+-- ============================================================
+-- CONSULTA 4: ESTACIONALIDAD DE VENTAS POR CATEGORIA
+-- Decisión: ¿En qué meses debe Colombina aumentar producción?
+-- Revela los picos de demanda por categoría a lo largo del año.
+-- ============================================================
+SELECT
+    c.nombre_categoria,
+    EXTRACT(MONTH FROM ov.fecha_venta)   AS mes,
+    TO_CHAR(ov.fecha_venta, 'Month')     AS nombre_mes,
+    COUNT(DISTINCT ov.id_venta)          AS ordenes,
+    SUM(dv.unidades)                     AS unidades_vendidas,
+    ROUND(SUM(dv.subtotal), 2)           AS revenue_mes,
+    ROUND(AVG(SUM(dv.subtotal)) OVER
+        (PARTITION BY c.nombre_categoria), 2) AS promedio_mensual_categoria,
+    ROUND(SUM(dv.subtotal) * 100.0 /
+        SUM(SUM(dv.subtotal)) OVER
+        (PARTITION BY c.nombre_categoria), 2) AS pct_del_anio
+FROM orden_venta ov
+JOIN detalle_venta dv ON ov.id_venta  = dv.id_venta
+JOIN productos p      ON dv.id_prod   = p.id_producto
+JOIN categoria c      ON p.cate_id    = c.id_categoria
+GROUP BY c.nombre_categoria,
+         EXTRACT(MONTH FROM ov.fecha_venta),
+         TO_CHAR(ov.fecha_venta, 'Month')
+ORDER BY c.nombre_categoria, mes;
+
+
+-- ============================================================
+-- CONSULTA 5: TOP 20 CLIENTES POR REVENUE (ANÁLISIS PARETO)
+-- Decisión: ¿Qué clientes representan el 80% de las ventas?
+-- La regla 80/20 aplicada a la cartera de clientes.
+-- ============================================================
+WITH revenue_cliente AS (
+    SELECT
+        cl.id_cliente,
+        cl.nombre_cliente,
+        cl.tipo_cliente,
+        cl.canal_distribucion,
+        ci.nombre_ciudad,
+        COUNT(DISTINCT ov.id_venta)     AS ordenes_totales,
+        SUM(dv.subtotal)                AS revenue_total,
+        AVG(dv.subtotal)                AS ticket_promedio
+    FROM clientes cl
+    JOIN orden_venta ov   ON cl.id_cliente = ov.id_cliente
+    JOIN detalle_venta dv ON ov.id_venta   = dv.id_venta
+    JOIN ciudad ci        ON cl.id_ciudad  = ci.id_ciudad
+    GROUP BY cl.id_cliente, cl.nombre_cliente, cl.tipo_cliente,
+             cl.canal_distribucion, ci.nombre_ciudad
+)
+SELECT
+    id_cliente,
+    nombre_cliente,
+    tipo_cliente,
+    canal_distribucion,
+    nombre_ciudad,
+    ordenes_totales,
+    ROUND(revenue_total, 2)             AS revenue_total,
+    ROUND(ticket_promedio, 2)           AS ticket_promedio,
+    ROUND(revenue_total * 100.0 /
+        SUM(revenue_total) OVER (), 2)  AS pct_del_total,
+    ROUND(SUM(revenue_total) OVER (
+        ORDER BY revenue_total DESC
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) * 100.0 / SUM(revenue_total) OVER (), 2) AS pct_acumulado
+FROM revenue_cliente
+ORDER BY revenue_total DESC
+LIMIT 20;
+
+
+-- ============================================================
+-- CONSULTA 6: ANÁLISIS DE CARTERA VENCIDA DE PROVEEDORES
+-- Decisión: ¿Con qué proveedores hay mayor riesgo financiero?
+-- Identifica deudas vencidas y pendientes por proveedor.
+-- ============================================================
+SELECT
+    pr.id_proveedor,
+    pr.nombre_proveedor,
+    ci.nombre_ciudad                                      AS ciudad_proveedor,
+    COUNT(oc.id_compra)                                   AS total_ordenes,
+    COUNT(CASE WHEN oc.estado_pago = 'pagado'   THEN 1 END) AS ordenes_pagadas,
+    COUNT(CASE WHEN oc.estado_pago = 'pendiente' THEN 1 END) AS ordenes_pendientes,
+    COUNT(CASE WHEN oc.estado_pago = 'vencido'  THEN 1 END) AS ordenes_vencidas,
+    ROUND(SUM(CASE WHEN oc.estado_pago = 'vencido'
+                   THEN dc.subtotal ELSE 0 END), 2)       AS monto_vencido,
+    ROUND(SUM(CASE WHEN oc.estado_pago = 'pendiente'
+                   THEN dc.subtotal ELSE 0 END), 2)       AS monto_pendiente,
+    ROUND(SUM(dc.subtotal), 2)                            AS monto_total_compras,
+    ROUND(SUM(CASE WHEN oc.estado_pago IN ('vencido','pendiente')
+                   THEN dc.subtotal ELSE 0 END) * 100.0
+          / NULLIF(SUM(dc.subtotal), 0), 2)               AS pct_cartera_riesgo
+FROM proveedor pr
+JOIN orden_compra oc   ON pr.id_proveedor  = oc.id_proveedor
+JOIN detalle_compra dc ON oc.id_compra     = dc.id_compra
+JOIN ciudad ci         ON pr.id_ciudad     = ci.id_ciudad
+GROUP BY pr.id_proveedor, pr.nombre_proveedor, ci.nombre_ciudad
+ORDER BY monto_vencido DESC;
+
+
+-- ============================================================
+-- CONSULTA 7: MARGEN BRUTO POR CATEGORÍA DE PRODUCTO
+-- Decisión: ¿Qué categoría es más rentable para Colombina?
+-- Cruza costos de compra vs precio de venta por categoría.
+-- ============================================================
+WITH costos AS (
+    SELECT
+        p.cate_id,
+        SUM(dc.precio_historico * dc.cantidad_prods) AS costo_total
+    FROM detalle_compra dc
+    JOIN productos p ON dc.id_prod = p.id_producto
+    GROUP BY p.cate_id
+),
+ventas AS (
+    SELECT
+        p.cate_id,
+        SUM(dv.subtotal)    AS revenue_total,
+        SUM(dv.unidades)    AS unidades_vendidas
+    FROM detalle_venta dv
+    JOIN productos p ON dv.id_prod = p.id_producto
+    GROUP BY p.cate_id
+)
+SELECT
+    c.nombre_categoria,
+    ROUND(v.revenue_total, 2)                               AS revenue_total,
+    ROUND(co.costo_total, 2)                                AS costo_total,
+    ROUND(v.revenue_total - co.costo_total, 2)              AS margen_bruto,
+    ROUND((v.revenue_total - co.costo_total) * 100.0
+          / NULLIF(v.revenue_total, 0), 2)                  AS margen_bruto_pct,
+    v.unidades_vendidas,
+    ROUND(v.revenue_total / NULLIF(v.unidades_vendidas,0),2) AS revenue_por_unidad
+FROM categoria c
+JOIN ventas  v  ON c.id_categoria = v.cate_id
+JOIN costos co  ON c.id_categoria = co.cate_id
+ORDER BY margen_bruto_pct DESC;
+
+
+-- ============================================================
+-- CONSULTA 8: COMPARATIVO DE VENTAS 2023 VS 2024 POR MARCA
+-- Decisión: ¿Qué marcas están creciendo y cuáles decreciendo?
+-- Permite identificar marcas que necesitan inversión en mercadeo.
+-- ============================================================
+WITH ventas_anio AS (
+    SELECT
+        p.marca_id,
+        EXTRACT(YEAR FROM ov.fecha_venta) AS anio,
+        ROUND(SUM(dv.subtotal), 2)        AS revenue
+    FROM orden_venta ov
+    JOIN detalle_venta dv ON ov.id_venta  = dv.id_venta
+    JOIN productos p      ON dv.id_prod   = p.id_producto
+    GROUP BY p.marca_id, EXTRACT(YEAR FROM ov.fecha_venta)
+)
+SELECT
+    m.nombre_marca,
+    ROUND(MAX(CASE WHEN anio = 2023 THEN revenue END), 2) AS revenue_2023,
+    ROUND(MAX(CASE WHEN anio = 2024 THEN revenue END), 2) AS revenue_2024,
+    ROUND(MAX(CASE WHEN anio = 2024 THEN revenue END) -
+          MAX(CASE WHEN anio = 2023 THEN revenue END), 2) AS variacion_absoluta,
+    ROUND((MAX(CASE WHEN anio = 2024 THEN revenue END) -
+           MAX(CASE WHEN anio = 2023 THEN revenue END)) * 100.0 /
+          NULLIF(MAX(CASE WHEN anio = 2023 THEN revenue END), 0), 2) AS crecimiento_pct,
+    CASE
+        WHEN MAX(CASE WHEN anio = 2024 THEN revenue END) >
+             MAX(CASE WHEN anio = 2023 THEN revenue END) THEN 'CRECIENDO'
+        WHEN MAX(CASE WHEN anio = 2024 THEN revenue END) <
+             MAX(CASE WHEN anio = 2023 THEN revenue END) THEN 'DECRECIENDO'
+        ELSE 'ESTABLE'
+    END AS tendencia
+FROM ventas_anio va
+JOIN marca m ON va.marca_id = m.id_marca
+GROUP BY m.nombre_marca
+ORDER BY crecimiento_pct DESC;
+
+
+-- ============================================================
+-- CONSULTA 9: ALERTAS DE INVENTARIO BAJO POR PLANTA
+-- Decisión: ¿Qué productos necesitan reabastecimiento urgente?
+-- Muestra productos por debajo del stock mínimo por planta.
+-- ============================================================
+
+--esta consulta la ejecuto para poder que aproximandamente 1 de cada 7 productos este bajo de stock
+--de este modo, el 14-15% estara bajo de stock y la consulta de abajo finalmente tendra resultados
+--era necesario, pues al momento de generar los datos sinteticos, todos los productos del inventario
+--tenian un stock suficiente para no caer en ninguna categoria baja
+--y entonces la consulta antes no mostraba nada.
+UPDATE inventario
+SET cantidad_disponible = FLOOR(stock_minimo * (0.3 + random() * 0.7))
+WHERE id_inventario % 7 = 0;
+
+SELECT
+    pl.tipo_planta,
+    ci.nombre_ciudad,
+    p.nombre_producto,
+    c.nombre_categoria,
+    inv.cantidad_disponible,
+    inv.stock_minimo,
+    inv.stock_minimo - inv.cantidad_disponible  AS deficit,
+    ROUND(inv.cantidad_disponible * 100.0 /
+        NULLIF(inv.stock_minimo, 0), 2)         AS pct_sobre_minimo,
+    CASE
+        WHEN inv.cantidad_disponible = 0
+            THEN 'SIN STOCK'
+        WHEN inv.cantidad_disponible < inv.stock_minimo
+            THEN 'CRITICO'
+        WHEN inv.cantidad_disponible < inv.stock_minimo * 1.2
+            THEN 'ALERTA'
+        ELSE 'OK'
+    END AS estado_inventario,
+    inv.fecha_actualizacion
+FROM inventario inv
+JOIN planta pl    ON inv.id_planta  = pl.id_planta
+JOIN ciudad ci    ON pl.id_ciudad   = ci.id_ciudad
+JOIN productos p  ON inv.id_prod    = p.id_producto
+JOIN categoria c  ON p.cate_id      = c.id_categoria
+WHERE inv.cantidad_disponible <= inv.stock_minimo * 1.2
+ORDER BY deficit DESC, pl.tipo_planta;
+
+
+
+
+-- ============================================================
+-- CONSULTA 10: COSTO LABORAL POR PLANTA Y ÁREA
+-- Decisión: ¿Dónde está concentrado el gasto en nómina?
+-- Cruza empleados, cargos y plantas para estimar nómina mensual.
+-- ============================================================
+SELECT
+    pl.tipo_planta,
+    ci.nombre_ciudad,
+    ad.nombre_area,
+    COUNT(e.id_empleado)                    AS num_empleados,
+    ROUND(SUM(ca.salario_base), 2)          AS nomina_mensual,
+    ROUND(AVG(ca.salario_base), 2)          AS salario_promedio,
+    MIN(ca.salario_base)                    AS salario_minimo,
+    MAX(ca.salario_base)                    AS salario_maximo,
+    COUNT(CASE WHEN tc.nombre_tipo_contrato
+               = 'termino indefinido' THEN 1 END) AS contratos_indefinidos,
+    COUNT(CASE WHEN tc.nombre_tipo_contrato
+               = 'termino fijo' THEN 1 END)       AS contratos_fijos,
+    ROUND(SUM(ca.salario_base) * 100.0 /
+        SUM(SUM(ca.salario_base)) OVER (), 2)      AS pct_nomina_total
+FROM empleado e
+JOIN planta pl          ON e.id_planta        = pl.id_planta
+JOIN ciudad ci          ON pl.id_ciudad       = ci.id_ciudad
+JOIN cargo ca           ON e.id_cargo         = ca.id_cargo
+JOIN area_departamento ad ON ca.id_area_depto = ad.id_area
+JOIN tipo_contrato tc   ON e.id_tipo_contrato = tc.id_tipo_contrato
+GROUP BY pl.tipo_planta, ci.nombre_ciudad, ad.nombre_area
+ORDER BY nomina_mensual DESC;
+
+-- ============================================================
+-- FIN DEL SCRIPT DE CONSULTAS ESTRATÉGICAS — COLOMBINA S.A.
+-- ============================================================
