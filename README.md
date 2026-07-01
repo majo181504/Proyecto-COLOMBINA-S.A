@@ -24,7 +24,7 @@ Puede visualizarse directamente a continuación:
 
 ![Modelo ER](docs/MER.png)
 
-> **Nota:** Cambie el nombre `MER.png` por el nombre real del archivo de la imagen.
+
 
 ---
 
