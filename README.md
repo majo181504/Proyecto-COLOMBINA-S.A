@@ -165,4 +165,5 @@ Los datos fueron diseñados para representar un escenario realista del funcionam
 - David Alejandro García Grueso
 - María José Gonzalez Rosero
 - Carlos Ocoró Velez
+  
 Proyecto desarrollado como trabajo académico para la asignatura **Bases de Datos**.
