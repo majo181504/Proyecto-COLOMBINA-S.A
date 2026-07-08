@@ -28,27 +28,22 @@ Puede visualizarse directamente a continuación:
 
 ---
 
-# Estructura del repositorio
+# Estructura del proyecto
 
-```
-Proyecto-COLOMBINA-S.A
+```text
+Proyecto-COLOMBINA-S.A/
 │
-├── database
-│   ├── schema
-│   │     Script de creación de la base de datos.
-│   │
-│   ├── seed
-│   │     Datos sintéticos para poblar la base de datos.
-│   │
-│   └── queries
-│         Consultas SQL del proyecto.
+├── app/                # Proyecto Django
+├── db/                 # Scripts SQL
+├── docs/               # Documentación
+├── templates/          # Plantillas HTML
+├── static/             # CSS, JS e imágenes
 │
-├── docs
-│     Documentación del proyecto y modelo entidad-relación.
-│
+├── requirements.txt    # Dependencias del proyecto
+├── .env.example        # Ejemplo de configuración
 ├── README.md
 ├── LICENSE
-└── .gitignore
+└── DOC_IA.md           # Bitacora de uso responsable de IA
 ```
 
 ---
@@ -57,7 +52,7 @@ Proyecto-COLOMBINA-S.A
 
 - PostgreSQL
 - SQL
-- pgAdmin 4
+- pgAdmin 4/Dbeaver
 - Git
 - GitHub
 
@@ -68,8 +63,156 @@ Proyecto-COLOMBINA-S.A
 Antes de ejecutar el proyecto se requiere:
 
 - PostgreSQL instalado.
-- pgAdmin 4 (opcional, recomendado).
+- pgAdmin 4 (opcional, tambien se puede usar Dbeaver).
 - Una base de datos vacía donde se ejecutarán los scripts.
+
+---
+
+# Pre-ejecución del proyecto
+## 1. Clonar el repositorio
+
+Abrir una terminal (CMD o PowerShell) y ejecutar:
+
+```bash
+git clone https://github.com/majo181504/Proyecto-COLOMBINA-S.A.git
+cd Proyecto-COLOMBINA-S.A
+```
+
+---
+
+## 2. Crear el entorno virtual
+
+Desde la carpeta del proyecto ejecutar:
+
+```bash
+python -m venv .venv
+```
+
+Esto creará una carpeta llamada `.venv` que contendrá todas las dependencias del proyecto.
+
+---
+
+## 3. Activar el entorno virtual
+
+### Si estás usando CMD:
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+### Si estás usando PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Si el entorno se activó correctamente, deberías ver algo parecido a:
+
+```text
+(.venv) C:\Users\TuUsuario\Proyecto-COLOMBINA-S.A>
+```
+
+---
+
+## 4. Instalar las dependencias del proyecto
+
+Con el entorno virtual activado ejecutar:
+
+```bash
+pip install -r requirements.txt
+```
+
+Este comando instalará automáticamente:
+
+- Django
+- psycopg2-binary
+- python-decouple
+- y cualquier otra dependencia utilizada en el proyecto.
+
+---
+
+## 5. Crear el archivo de configuración local
+
+Copiar el archivo de ejemplo:
+
+```cmd
+copy .env.example .env
+```
+
+Ahora abrir el archivo `.env` y modificar únicamente las credenciales de PostgreSQL.
+
+Ejemplo:
+
+```env
+DB_NAME=colombina-db
+DB_USER=postgres
+DB_PASSWORD=tu_contraseña
+DB_HOST=localhost
+DB_PORT=5432
+
+SECRET_KEY=django-insecure-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DEBUG=True
+```
+
+## Importante
+
+El archivo `.env` contiene información privada y **NO debe subirse a GitHub**.
+
+---
+
+## 6. Verificar la conexión con la base de datos
+
+Entrar a la carpeta de la aplicación:
+
+```bash
+cd app
+```
+
+Ejecutar:
+
+```bash
+python manage.py check
+```
+
+Si todo está correcto, aparecerá:
+
+```text
+System check identified no issues (0 silenced).
+```
+
+---
+
+## 7. Ejecutar las migraciones de Django
+
+```bash
+python manage.py migrate
+```
+
+Este comando crea las tablas internas que necesita Django para funcionar.
+
+**No modifica las tablas del proyecto COLOMBINA S.A.**
+
+---
+
+## 8. Iniciar el servidor
+
+```bash
+python manage.py runserver
+```
+
+Si todo salió bien aparecerá algo similar a:
+
+```text
+Starting development server at http://127.0.0.1:8000/
+```
+
+Abrir en el navegador:
+
+```text
+http://127.0.0.1:8000/
+```
+
+Si aparece la página de bienvenida de Django, el proyecto está listo para comenzar a desarrollar.
 
 ---
 
@@ -94,7 +237,7 @@ Posteriormente conectarse a dicha base de datos.
 Dirigirse a la carpeta:
 
 ```
-database/schema
+db/schema
 ```
 
 Ejecutar el script correspondiente al esquema de la base de datos.
@@ -108,7 +251,7 @@ Este archivo crea todas las tablas, restricciones, claves primarias y claves for
 Dentro de la carpeta
 
 ```
-database/seed
+db/seed
 ```
 
 se encuentran los archivos SQL que contienen los datos sintéticos.
