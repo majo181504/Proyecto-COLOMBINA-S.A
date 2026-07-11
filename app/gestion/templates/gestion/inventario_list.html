@@ -1,0 +1,28 @@
+{% extends "gestion/base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block content %}
+<h1 class="mb-3">Inventario y alertas de reabastecimiento</h1>
+<div class="table-responsive bg-white">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr><th>Producto</th><th>Planta</th><th>Disponible</th><th>Demanda diaria</th><th>Días de stock</th><th>Estado</th><th>Acción recomendada</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for inv in inventarios %}
+            <tr>
+                <td>{{ inv.id_prod }}</td>
+                <td>{{ inv.id_planta }}</td>
+                <td>{{ inv.cantidad_disponible }}</td>
+                <td>{{ inv.demanda_diaria }}</td>
+                <td>{{ inv.dias_stock }}</td>
+                <td><span class="badge badge-estado-{{ inv.estado_stock }}">{{ inv.estado_stock }}</span></td>
+                <td>{{ inv.accion_recomendada }}</td>
+                <td class="text-end"><a href="{% url 'gestion:inventario_update' inv.pk %}" class="btn btn-sm btn-outline-primary">Editar</a></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No hay registros de inventario.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

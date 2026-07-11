@@ -1,0 +1,58 @@
+{% extends "gestion/base.html" %}
+{% block title %}Factura #{{ factura.id_venta }}{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h4 class="text-center mb-3">FACTURA ELECTRÓNICA DE VENTA</h4>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Vendedor:</strong> {{ facturacion.VENDEDOR_NOMBRE }}<br>
+                <strong>NIT:</strong> {{ facturacion.VENDEDOR_NIT }}<br>
+                <strong>Dirección:</strong> {{ facturacion.VENDEDOR_DIRECCION }}
+            </div>
+            <div class="col-md-6 text-md-end">
+                <strong>N° Factura:</strong> {{ facturacion.PREFIJO }}-{{ factura.id_venta }}<br>
+                <strong>Resolución DIAN N°:</strong> {{ facturacion.NUMERO_RESOLUCION }}<br>
+                <strong>{{ facturacion.VIGENCIA_RESOLUCION }}</strong><br>
+                <strong>Fecha de expedición:</strong> {{ factura.fecha_venta }}
+            </div>
+        </div>
+        <div class="mb-3">
+            <strong>Cliente:</strong> {{ factura.id_cliente.nombre_cliente }} — NIT/Cédula: {{ factura.id_cliente.nit }}
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light"><tr><th>Producto</th><th>Cantidad</th><th>Precio unitario</th><th>Subtotal</th><th>Tarifa IVA</th><th>Valor IVA</th></tr></thead>
+                <tbody>
+                {% for d in factura.detalles.all %}
+                    <tr>
+                        <td>{{ d.id_prod }}</td>
+                        <td>{{ d.unidades }}</td>
+                        <td>${{ d.precio_historico }}</td>
+                        <td>${{ d.subtotal }}</td>
+                        <td>{{ d.id_prod.get_tarifa_iva_display }}</td>
+                        <td>${{ d.iva }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="row justify-content-end">
+            <div class="col-md-4">
+                <table class="table table-sm mb-0">
+                    <tr><td>Subtotal</td><td class="text-end">${{ factura.subtotal }}</td></tr>
+                    <tr><td>IVA total</td><td class="text-end">${{ factura.iva }}</td></tr>
+                    <tr class="fw-bold"><td>Total a pagar</td><td class="text-end">${{ factura.total }}</td></tr>
+                </table>
+            </div>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+            CUFE / Código QR: espacio reservado (opcional para este proyecto).<br>
+            Esta factura no es editable ni eliminable una vez emitida.
+        </p>
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{% url 'gestion:factura_list' %}" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}

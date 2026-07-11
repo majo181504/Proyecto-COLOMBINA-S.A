@@ -1,0 +1,56 @@
+{% extends "gestion/base.html" %}
+{% block title %}Nueva Orden de Pedido{% endblock %}
+{% block content %}
+<h1>Nueva Orden de Pedido</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr class="my-4">
+            <h5>Productos solicitados</h5>
+            <p class="text-muted small">Solo se pueden pedir productos de proveedores ya registrados (restricción de integridad referencial).</p>
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead class="table-light">
+                        <tr><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th><th>Quitar</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for detalle_form in formset %}
+                        <tr>
+                            {% for hidden in detalle_form.hidden_fields %}{{ hidden }}{% endfor %}
+                            <td>{{ detalle_form.id_prod }}</td>
+                            <td>{{ detalle_form.cantidad_prods }}</td>
+                            <td>{{ detalle_form.precio_historico }}</td>
+                            <td>{{ detalle_form.subtotal }}</td>
+                            <td class="text-center">{% if detalle_form.DELETE %}{{ detalle_form.DELETE }}{% endif %}</td>
+                        </tr>
+                        {% if detalle_form.errors %}
+                        <tr><td colspan="5" class="text-danger small">{{ detalle_form.errors }}</td></tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-danger">Registrar orden</button>
+                <a href="{% url 'gestion:orden_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

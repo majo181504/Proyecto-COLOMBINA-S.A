@@ -1,0 +1,26 @@
+{% extends "gestion/base.html" %}
+{% block title %}{{ entidad }}{% endblock %}
+{% block content %}
+<h1>{% if form.instance.pk %}Editar cliente{% else %}Nuevo cliente{% endif %}</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-danger">Guardar</button>
+                <a href="{% url 'gestion:cliente_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

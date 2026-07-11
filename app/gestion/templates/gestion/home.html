@@ -1,0 +1,37 @@
+{% extends "gestion/base.html" %}
+{% block title %}Inicio · Colombina S.A.{% endblock %}
+{% block content %}
+<h1 class="mb-4">Panel de gestión — Colombina S.A.</h1>
+<div class="row g-3">
+    <div class="col-md-2 col-6">
+        <div class="card card-metric p-3 text-center">
+            <div class="fs-3 fw-bold">{{ total_clientes }}</div>
+            <div class="text-muted">Clientes</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card card-metric p-3 text-center">
+            <div class="fs-3 fw-bold">{{ total_proveedores }}</div>
+            <div class="text-muted">Proveedores</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card card-metric p-3 text-center">
+            <div class="fs-3 fw-bold">{{ total_productos }}</div>
+            <div class="text-muted">Productos</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card card-metric p-3 text-center">
+            <div class="fs-3 fw-bold">{{ total_facturas }}</div>
+            <div class="text-muted">Facturas</div>
+        </div>
+    </div>
+    <div class="col-md-2 col-6">
+        <div class="card card-metric p-3 text-center">
+            <div class="fs-3 fw-bold">{{ total_ordenes }}</div>
+            <div class="text-muted">Órdenes de pedido</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
