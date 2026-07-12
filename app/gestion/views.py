@@ -65,6 +65,9 @@ class ClienteListView(ListView):
     template_name = "gestion/cliente_list.html"
     context_object_name = "clientes"
     paginate_by = 20
+    
+    def get_queryset(self):
+        return Cliente.objects.order_by("id_cliente")
 
 
 class ClienteDetailView(DetailView):
@@ -110,6 +113,9 @@ class ProveedorListView(ListView):
     template_name = "gestion/proveedor_list.html"
     context_object_name = "proveedores"
     paginate_by = 20
+    
+    def get_queryset(self):
+        return Proveedor.objects.order_by("id_proveedor")
 
 
 class ProveedorDetailView(DetailView):
@@ -158,10 +164,10 @@ class ProductoListView(ListView):
     def get_queryset(self):
         mostrar = self.request.GET.get("mostrar")
         if mostrar == "todos":
-            return Producto.objects.all()
+            return Producto.objects.order_by("id_producto")
         elif mostrar == "inactivos":
-            return Producto.objects.filter(activo=False)
-        return Producto.objects.filter(activo=True)
+            return Producto.objects.filter(activo=False).order_by("id_producto")
+        return Producto.objects.filter(activo=True).order_by("id_producto")
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -231,6 +237,9 @@ class FacturaListView(ListView):
     template_name = "gestion/factura_list.html"
     context_object_name = "facturas"
     paginate_by = 20
+    
+    def get_queryset(self):
+        return OrdenVenta.objects.order_by("-id_venta")
 
 
 class FacturaDetailView(DetailView):
@@ -294,6 +303,9 @@ class OrdenCompraListView(ListView):
     template_name = "gestion/orden_list.html"
     context_object_name = "ordenes"
     paginate_by = 20
+    
+    def get_queryset(self):
+        return OrdenCompra.objects.order_by("-id_compra")
 
 
 class OrdenCompraDetailView(DetailView):
@@ -365,6 +377,9 @@ class InventarioListView(ListView):
     template_name = "gestion/inventario_list.html"
     context_object_name = "inventarios"
     paginate_by = 30
+    
+    def get_queryset(self):
+        return Inventario.objects.order_by("id_inventario")
 
 
 def inventario_update_view(request, pk):
