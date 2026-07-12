@@ -300,9 +300,11 @@ class OrdenCompraListView(ListView):
     template_name = "gestion/orden_list.html"
     context_object_name = "ordenes"
     paginate_by = 20
+    ordering = ['-fecha_compra']
+
     
-    def get_queryset(self):
-        return OrdenCompra.objects.order_by("-id_compra")
+    #def get_queryset(self):
+    #    return OrdenCompra.objects.order_by("-id_compra")
 
 
 class OrdenCompraDetailView(DetailView):
