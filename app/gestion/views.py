@@ -237,11 +237,8 @@ class FacturaListView(ListView):
     template_name = "gestion/factura_list.html"
     context_object_name = "facturas"
     paginate_by = 20
+    ordering = ['-fecha_venta']
     
-    def get_queryset(self):
-        return OrdenVenta.objects.order_by("-id_venta")
-
-
 class FacturaDetailView(DetailView):
     model = OrdenVenta
     template_name = "gestion/factura_detail.html"
