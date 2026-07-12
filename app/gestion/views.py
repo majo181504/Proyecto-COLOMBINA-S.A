@@ -302,10 +302,6 @@ class OrdenCompraListView(ListView):
     paginate_by = 20
     ordering = ['-fecha_compra']
 
-    
-    #def get_queryset(self):
-    #    return OrdenCompra.objects.order_by("-id_compra")
-
 
 class OrdenCompraDetailView(DetailView):
     model = OrdenCompra

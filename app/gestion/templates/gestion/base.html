@@ -6,11 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Colombina S.A. - Gestión{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
             --colombina-azul: #003DA5;
             --colombina-azul-oscuro: #002d78;
-            --colombina-rojo: #E4002B;
+            --colombina-rojo: #0022e4;
             --colombina-blanco: #ffffff;
         }
         body { background-color: #f5f6f9; }
@@ -18,6 +20,9 @@
         .navbar-colombina { background-color: var(--colombina-azul); }
         .navbar-colombina .nav-link, .navbar-colombina .navbar-brand { color: #fff !important; }
         .navbar-colombina .nav-link:hover { color: var(--colombina-rojo) !important; }
+        .navbar-colombina .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            }
         .logo-colombina { height: 38px; margin-right: 10px; vertical-align: middle; }
         .btn-danger { background-color: var(--colombina-rojo) !important; border-color: var(--colombina-rojo) !important; }
         .btn-danger:hover { background-color: #b8001f !important; border-color: #b8001f !important; }
@@ -46,11 +51,11 @@
 <nav class="navbar navbar-expand-lg navbar-colombina mb-4">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="{% url 'gestion:home' %}">
-            <img src="{% static 'images/logo-colombina.png' %}" alt="Colombina" class="logo-colombina" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline';">
+            <img src="{% static 'images/Logo2.png' %}" alt="Colombina" class="logo-colombina" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline';">
             <span id="logo-fallback" style="display:none;">🍬&nbsp;</span>
-            Colombina S.A. · Gestión
+                Panel de Gestión - Colombina S.A.
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <button class="navbar-toggler border-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navMenu">
@@ -81,7 +86,6 @@
 </div>
 
 <footer class="container text-center py-3">
-    Proyecto Bases de Datos · Grupo 01 · Colombina S.A.
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
