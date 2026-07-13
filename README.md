@@ -308,5 +308,7 @@ Los datos fueron diseñados para representar un escenario realista del funcionam
 - David Alejandro García Grueso
 - María José Gonzalez Rosero
 - Carlos Ocoró Velez
+
+Nota: Durante las pruebas funcionales del sistema se generaron registros adicionales de productos, facturas y órdenes de pedido. Debido a las restricciones de integridad y a las reglas de negocio implementadas, dichos registros se conservan como parte del estado actual del sistema.
   
 Proyecto desarrollado como trabajo académico para la asignatura **Bases de Datos**.
