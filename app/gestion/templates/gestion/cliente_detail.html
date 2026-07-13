@@ -1,0 +1,26 @@
+{% extends "gestion/base.html" %}
+{% block title %}{{ cliente.nombre_cliente }}{% endblock %}
+{% block content %}
+<h1>{{ cliente.nombre_cliente }}</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">NIT</dt><dd class="col-sm-9">{{ cliente.nit }}</dd>
+            <dt class="col-sm-3">Tipo de cliente</dt><dd class="col-sm-9">{{ cliente.tipo_cliente }}</dd>
+            <dt class="col-sm-3">Canal de distribución</dt><dd class="col-sm-9">{{ cliente.canal_distribucion }}</dd>
+            <dt class="col-sm-3">Dirección</dt><dd class="col-sm-9">{{ cliente.direccion }}</dd>
+            <dt class="col-sm-3">Ciudad</dt><dd class="col-sm-9">{{ cliente.id_ciudad }}</dd>
+            <dt class="col-sm-3">Teléfono</dt><dd class="col-sm-9">{{ cliente.telefono }}</dd>
+            <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ cliente.email }}</dd>
+            <dt class="col-sm-3">Crédito autorizado</dt><dd class="col-sm-9">{{ cliente.credito_autorizado|yesno:"Sí,No" }}</dd>
+            <dt class="col-sm-3">Autorización Habeas Data</dt><dd class="col-sm-9">{{ cliente.autorizacion_habeas_data|yesno:"Sí,No" }}</dd>
+            <dt class="col-sm-3">Representante legal</dt><dd class="col-sm-9">{{ cliente.representante_legal|default:"—" }}</dd>
+            <dt class="col-sm-3">Régimen tributario</dt><dd class="col-sm-9">{{ cliente.get_tipo_regimen_tributario_display|default:"—" }}</dd>
+        </dl>
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{% url 'gestion:cliente_update' cliente.pk %}" class="btn btn-outline-primary">Editar</a>
+    <a href="{% url 'gestion:cliente_list' %}" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}

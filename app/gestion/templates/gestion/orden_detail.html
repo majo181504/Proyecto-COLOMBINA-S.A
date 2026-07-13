@@ -1,0 +1,52 @@
+{% extends "gestion/base.html" %}
+{% block title %}Orden de Pedido #{{ orden.id_compra }}{% endblock %}
+{% block content %}
+<h1>Orden de Pedido #{{ orden.id_compra }}</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Proveedor</dt><dd class="col-sm-9">{{ orden.id_proveedor.nombre_proveedor }} (NIT {{ orden.id_proveedor.nit }})</dd>
+            <dt class="col-sm-3">Fecha de pedido</dt><dd class="col-sm-9">{{ orden.fecha_compra }}</dd>
+            <dt class="col-sm-3">Fecha de vencimiento</dt><dd class="col-sm-9">{{ orden.fecha_vencimiento }}</dd>
+            <dt class="col-sm-3">Fecha de pago</dt><dd class="col-sm-9">{{ orden.fecha_pago|default:"—" }}</dd>
+            <dt class="col-sm-3">Estado actual</dt>
+            <dd class="col-sm-9">
+                {% if orden.estado_pago == "pendiente" %}<span class="badge bg-warning text-dark">Pendiente</span>
+                {% elif orden.estado_pago == "pagado" %}<span class="badge bg-success">Pagado</span>
+                {% else %}<span class="badge bg-danger">Vencido</span>{% endif %}
+            </dd>
+        </dl>
+
+        <table class="table table-bordered mt-3">
+            <thead class="table-light"><tr><th>Materia prima</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th></tr></thead>
+            <tbody>
+            {% for d in orden.detalles.all %}
+                <tr>
+                    <td>{{ d.id_materia }}</td>
+                    <td>{{ d.cantidad_prods }}</td>
+                    <td>${{ d.precio_historico }}</td>
+                    <td>${{ d.subtotal }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot><tr class="fw-bold"><td colspan="3" class="text-end">Total</td><td>${{ orden.total }}</td></tr></tfoot>
+        </table>
+
+        <hr>
+        <h6>Cambiar estado de pago</h6>
+        <p class="text-muted small">Este es el único dato editable de la orden una vez creada; el detalle de productos queda fijo para conservar el rastro de la transacción.</p>
+        <form method="post" action="{% url 'gestion:orden_update_estado' orden.pk %}" class="d-flex gap-2">
+            {% csrf_token %}
+            <select name="estado_pago" style="width:auto">
+                <option value="pendiente" {% if orden.estado_pago == "pendiente" %}selected{% endif %}>Pendiente</option>
+                <option value="pagado" {% if orden.estado_pago == "pagado" %}selected{% endif %}>Pagado</option>
+                <option value="vencido" {% if orden.estado_pago == "vencido" %}selected{% endif %}>Vencido</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary">Actualizar estado</button>
+        </form>
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{% url 'gestion:orden_list' %}" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}

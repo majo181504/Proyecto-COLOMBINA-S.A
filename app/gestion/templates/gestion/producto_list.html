@@ -1,0 +1,91 @@
+{% extends "gestion/base.html" %}
+{% block title %}Productos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Productos</h1>
+    <a href="{% url 'gestion:producto_create' %}" class="btn btn-primary">+ Nuevo producto</a>
+</div>
+<div class="btn-group mb-3">
+    <a href="?mostrar=activos" class="btn btn-sm {% if mostrar == 'activos' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Activos</a>
+    <a href="?mostrar=inactivos" class="btn btn-sm {% if mostrar == 'inactivos' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Inactivos</a>
+    <a href="?mostrar=todos" class="btn btn-sm {% if mostrar == 'todos' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Todos</a>
+</div>
+<div class="table-responsive bg-white">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+            <tr><th>Nombre</th><th>Categoría</th><th>Marca</th><th>Peso</th><th>Precio</th><th>IVA</th><th>Precio + IVA</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for p in productos %}
+            <tr>
+                <td><a href="{% url 'gestion:producto_detail' p.pk %}">{{ p.nombre_producto }}</a></td>
+                <td>{{ p.cate_id }}</td>
+                <td>{{ p.marca_id }}</td>
+                <td>{{ p.peso }} {{ p.unidad_medida }}</td>
+                <td>${{ p.precio }}</td>
+                <td>{{ p.get_tarifa_iva_display }}</td>
+                <td>${{ p.precio_con_iva }}</td>
+                <td>{% if p.activo %}<span class="badge bg-success">Activo</span>{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}</td>
+                <td class="text-end">
+                    <a href="{% url 'gestion:producto_update' p.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                    {% if p.activo %}
+                        <a href="{% url 'gestion:producto_delete' p.pk %}" class="btn btn-sm btn-outline-danger">Desactivar</a>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="9" class="text-center text-muted py-4">No hay productos para mostrar.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?mostrar={{ mostrar }}&page=1">
+                Primera
+            </a>
+        </li>
+
+        <li class="page-item">
+            <a class="page-link"
+                href="?mostrar={{ mostrar }}&page={{ page_obj.previous_page_number }}">
+                Anterior
+            </a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                Página {{ page_obj.number }}
+                de
+                {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link"
+                href="?mostrar={{ mostrar }}&page={{ page_obj.next_page_number }}">
+                Siguiente
+            </a>
+        </li>
+
+        <li class="page-item">
+            <a class="page-link"
+                href="?mostrar={{ mostrar }}&page={{ page_obj.paginator.num_pages }}">
+                Última
+            </a>
+        </li>
+        {% endif %}
+
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

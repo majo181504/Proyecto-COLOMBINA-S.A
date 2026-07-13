@@ -1,0 +1,60 @@
+{% extends "gestion/base.html" %}
+{% block title %}Nueva factura{% endblock %}
+{% block content %}
+<h1>Nueva factura</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <hr class="my-4">
+            <h5>Productos vendidos</h5>
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table" id="detalle-table">
+                    <thead class="table-light">
+                        <tr><th>Producto</th><th>Unidades</th><th>Precio unitario</th><th>Subtotal</th><th>Quitar</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for detalle_form in formset %}
+                        <tr>
+                            {% for hidden in detalle_form.hidden_fields %}{{ hidden }}{% endfor %}
+                            <td>{{ detalle_form.id_prod }}</td>
+                            <td>{{ detalle_form.unidades }}</td>
+                            <td>{{ detalle_form.precio_historico }}</td>
+                            <td>{{ detalle_form.subtotal }}</td>
+                            <td class="text-center">
+                                {% if detalle_form.DELETE %}{{ detalle_form.DELETE }}{% endif %}
+                            </td>
+                        </tr>
+                        {% if detalle_form.errors %}
+                        <tr><td colspan="5" class="text-danger small">{{ detalle_form.errors }}</td></tr>
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted small">
+                *Subtotal = unidades × precio unitario. 
+            </p>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-danger">Registrar factura</button>
+                <a href="{% url 'gestion:factura_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

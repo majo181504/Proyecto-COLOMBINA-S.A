@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'gestion',
 ]
 
 MIDDLEWARE = [
@@ -110,6 +111,16 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
+
+FACTURACION = {
+    "VENDEDOR_NOMBRE": "Colombina S.A.",
+    "VENDEDOR_NIT": "890.301.884-5",      
+    "VENDEDOR_DIRECCION": "Cra. 1 N°24-56 edificio Colombina Cali- valle",  # direccion principal
+    "PREFIJO": "FEV",
+    "NUMERO_RESOLUCION": "18760000001",    # ficticio/no es de acceso publico
+    "VIGENCIA_RESOLUCION": "Vigente desde 01/01/2024 hasta 31/12/2027",
+}
+
 
 USE_I18N = True
 
