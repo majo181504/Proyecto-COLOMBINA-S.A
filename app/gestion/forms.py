@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from .models import (
     Cliente, Proveedor, Producto,
@@ -120,3 +121,10 @@ class InventarioForm(forms.ModelForm):
     class Meta:
         model = Inventario
         fields = ["cantidad_disponible", "stock_minimo", "demanda_diaria"]
+
+
+class InventarioCreateForm(forms.ModelForm):
+    """Para agregar un producto nuevo al inventario (elige planta y producto)."""
+    class Meta:
+        model = Inventario
+        fields = ["id_planta", "id_prod", "cantidad_disponible", "stock_minimo", "demanda_diaria"]

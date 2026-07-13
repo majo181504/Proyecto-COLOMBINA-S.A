@@ -1,3 +1,5 @@
+from time import timezone
+
 from django.conf import settings
 from django.contrib import messages
 from django.db import IntegrityError, transaction
@@ -14,7 +16,7 @@ from .forms import (
     ClienteForm, ProveedorForm, ProductoForm,
     OrdenVentaForm, DetalleVentaFormSet,
     OrdenCompraForm, DetalleCompraFormSet,
-    InventarioForm,
+    InventarioForm, InventarioCreateForm,
 )
 
 
@@ -394,6 +396,21 @@ class InventarioListView(ListView):
     
     def get_queryset(self):
         return Inventario.objects.order_by("id_inventario")
+
+
+def inventario_create_view(request):
+    if request.method == "POST":
+        form = InventarioCreateForm(request.POST)
+        if form.is_valid():
+            inv = form.save(commit=False)
+            inv.fecha_actualizacion = timezone.now()
+            inv.save()
+            messages.success(request, "Producto agregado al inventario.")
+            return redirect("gestion:inventario_list")
+    else:
+        form = InventarioCreateForm()
+    return render(request, "gestion/inventario_create_form.html", {"form": form})
+
 
 
 def inventario_update_view(request, pk):

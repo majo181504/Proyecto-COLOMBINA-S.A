@@ -1,0 +1,25 @@
+{% extends "gestion/base.html" %}
+{% block title %}Nuevo registro de inventario{% endblock %}
+{% block content %}
+<h1>Agregar producto al inventario</h1>
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="col-md-6">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-danger">Guardar</button>
+                <a href="{% url 'gestion:inventario_list' %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

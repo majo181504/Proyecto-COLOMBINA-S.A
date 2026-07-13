@@ -43,5 +43,6 @@ urlpatterns = [
 
     # Inventario (solo lectura + editar demanda diaria)
     path("inventario/", views.InventarioListView.as_view(), name="inventario_list"),
+    path("inventario/nuevo/", views.inventario_create_view, name="inventario_create"),
     path("inventario/<int:pk>/editar/", views.inventario_update_view, name="inventario_update"),
 ]
