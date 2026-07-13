@@ -41,8 +41,13 @@ urlpatterns = [
     path("ordenes/<int:pk>/estado/", views.orden_actualizar_estado_view, name="orden_update_estado"),
     path("ordenes/<int:pk>/eliminar/", views.OrdenCompraDeleteView.as_view(), name="orden_delete"),
 
-    # Inventario (solo lectura + editar demanda diaria)
+    # Inventario productos(solo lectura + editar demanda diaria)
     path("inventario/", views.InventarioListView.as_view(), name="inventario_list"),
     path("inventario/nuevo/", views.inventario_create_view, name="inventario_create"),
     path("inventario/<int:pk>/editar/", views.inventario_update_view, name="inventario_update"),
+    
+    # Inventario materias primas (solo lectura + editar demanda diaria)
+    path("inventario/materias-primas/", views.InventarioMateriaPrimaListView.as_view(), name="inventario_materia_prima_list"),
+    path("inventario/materias-primas/nuevo/", views.inventario_materia_prima_create_view, name="inventario_materia_prima_create"),
+    path("inventario/materias-primas/<int:pk>/editar/", views.inventario_materia_prima_update_view, name="inventario_materia_prima_update"),
 ]
