@@ -1,11 +1,12 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.utils import timezone
 
 from .models import (
     Cliente, Proveedor, Producto,
     OrdenVenta, DetalleVenta,
     OrdenCompra, DetalleCompra,
-    Inventario,
+    Inventario, InventarioMateriaPrima, ProveedorMateria,   
 )
 
 
@@ -120,3 +121,39 @@ class InventarioForm(forms.ModelForm):
     class Meta:
         model = Inventario
         fields = ["cantidad_disponible", "stock_minimo", "demanda_diaria"]
+
+
+class InventarioCreateForm(forms.ModelForm):
+    """Para agregar un producto nuevo al inventario (elige planta y producto)."""
+    class Meta:
+        model = Inventario
+        fields = ["id_planta", "id_prod", "cantidad_disponible", "stock_minimo", "demanda_diaria"]
+        
+
+class InventarioMateriaPrimaForm(forms.ModelForm):
+    class Meta:
+        model = InventarioMateriaPrima
+        fields = ["id_proveedor", "id_materia", "cantidad_disponible", "demanda_diaria"]
+
+    def clean(self):
+        cleaned = super().clean()
+        proveedor = cleaned.get("id_proveedor")
+        materia = cleaned.get("id_materia")
+        if proveedor and materia:
+            if not ProveedorMateria.objects.filter(
+                id_proveedor=proveedor, id_materia=materia
+            ).exists():
+                self.add_error(
+                    "id_materia",
+                    f"{proveedor.nombre_proveedor} no tiene registrada esa "
+                    f"materia prima en su catálogo (proveedor_materia).",
+                )
+            qs = InventarioMateriaPrima.objects.filter(id_proveedor=proveedor, id_materia=materia)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error(
+                    "id_materia",
+                    "Ya existe un registro de inventario para este proveedor y esta materia prima.",
+                )
+        return cleaned

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.conf import settings
 from django.contrib import messages
 from django.db import IntegrityError, transaction
@@ -9,12 +10,14 @@ from django.views.generic import ListView, DetailView, DeleteView
 from .models import (
     Cliente, Proveedor, Producto, Inventario,
     OrdenVenta, OrdenCompra, ProveedorMateria,
+    InventarioMateriaPrima,
 )
 from .forms import (
     ClienteForm, ProveedorForm, ProductoForm,
     OrdenVentaForm, DetalleVentaFormSet,
     OrdenCompraForm, DetalleCompraFormSet,
-    InventarioForm,
+    InventarioForm, InventarioCreateForm,
+    InventarioMateriaPrimaForm,
 )
 
 
@@ -393,7 +396,24 @@ class InventarioListView(ListView):
     paginate_by = 30
     
     def get_queryset(self):
-        return Inventario.objects.order_by("id_inventario")
+        return Inventario.objects.order_by(
+            "id_prod__id_producto",
+            "id_planta__id_planta"
+        )
+
+def inventario_create_view(request):
+    if request.method == "POST":
+        form = InventarioCreateForm(request.POST)
+        if form.is_valid():
+            inv = form.save(commit=False)
+            inv.fecha_actualizacion = timezone.now()
+            inv.save()
+            messages.success(request, "Producto agregado al inventario.")
+            return redirect("gestion:inventario_list")
+    else:
+        form = InventarioCreateForm()
+    return render(request, "gestion/inventario_create_form.html", {"form": form})
+
 
 
 def inventario_update_view(request, pk):
@@ -407,4 +427,44 @@ def inventario_update_view(request, pk):
     else:
         form = InventarioForm(instance=inventario)
     return render(request, "gestion/inventario_form.html",
-                  {"form": form, "inventario": inventario})
+                    {"form": form, "inventario": inventario})
+
+
+class InventarioMateriaPrimaListView(ListView):
+    model = InventarioMateriaPrima
+    template_name = "gestion/inventario_materia_prima_list.html"
+    context_object_name = "materias_primas"
+    paginate_by = 30
+
+    def get_queryset(self):
+        return InventarioMateriaPrima.objects.order_by(
+            "id_materia__id_materia",
+            "id_proveedor__nombre_proveedor"
+        )
+
+def inventario_materia_prima_create_view(request):
+    if request.method == "POST":
+        form = InventarioMateriaPrimaForm(request.POST)
+        if form.is_valid():
+            insumo = form.save(commit=False)
+            insumo.fecha_actualizacion = timezone.now()
+            insumo.save()
+            messages.success(request, "Materia prima agregada al inventario.")
+            return redirect("gestion:inventario_materia_prima_list")
+    else:
+        form = InventarioMateriaPrimaForm()
+    return render(request, "gestion/inventario_materia_prima_form.html", {"form": form})
+
+
+def inventario_materia_prima_update_view(request, pk):
+    insumo = get_object_or_404(InventarioMateriaPrima, pk=pk)
+    if request.method == "POST":
+        form = InventarioMateriaPrimaForm(request.POST, instance=insumo)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Inventario de materia prima actualizado.")
+            return redirect("gestion:inventario_materia_prima_list")
+    else:
+        form = InventarioMateriaPrimaForm(instance=insumo)
+    return render(request, "gestion/inventario_materia_prima_form.html", {"form": form, "insumo": insumo})
+
