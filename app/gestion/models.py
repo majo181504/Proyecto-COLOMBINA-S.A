@@ -315,8 +315,8 @@ class DetalleCompra(models.Model):
         OrdenCompra, on_delete=models.CASCADE, db_column="id_compra",
         related_name="detalles",
     )
-    id_prod = models.ForeignKey(
-        Producto, on_delete=models.RESTRICT, db_column="id_prod"
+    id_materia = models.ForeignKey(
+        MateriaPrima, on_delete=models.RESTRICT, db_column="id_materia"
     )
     cantidad_prods = models.IntegerField()
     precio_historico = models.DecimalField(max_digits=12, decimal_places=2)

@@ -18,11 +18,11 @@
         </dl>
 
         <table class="table table-bordered mt-3">
-            <thead class="table-light"><tr><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th></tr></thead>
+            <thead class="table-light"><tr><th>Materia prima</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th></tr></thead>
             <tbody>
             {% for d in orden.detalles.all %}
                 <tr>
-                    <td>{{ d.id_prod }}</td>
+                    <td>{{ d.id_materia }}</td>
                     <td>{{ d.cantidad_prods }}</td>
                     <td>${{ d.precio_historico }}</td>
                     <td>${{ d.subtotal }}</td>

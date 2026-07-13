@@ -26,13 +26,13 @@
             <div class="table-responsive">
                 <table class="table">
                     <thead class="table-light">
-                        <tr><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th><th>Quitar</th></tr>
+                        <tr><th>Materia prima</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th><th>Quitar</th></tr>
                     </thead>
                     <tbody>
                     {% for detalle_form in formset %}
                         <tr>
                             {% for hidden in detalle_form.hidden_fields %}{{ hidden }}{% endfor %}
-                            <td>{{ detalle_form.id_prod }}</td>
+                            <td>{{ detalle_form.id_materia }}</td>
                             <td>{{ detalle_form.cantidad_prods }}</td>
                             <td>{{ detalle_form.precio_historico }}</td>
                             <td>{{ detalle_form.subtotal }}</td>

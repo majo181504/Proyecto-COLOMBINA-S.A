@@ -8,7 +8,7 @@ from django.views.generic import ListView, DetailView, DeleteView
 
 from .models import (
     Cliente, Proveedor, Producto, Inventario,
-    OrdenVenta, OrdenCompra,
+    OrdenVenta, OrdenCompra, ProveedorMateria,
 )
 from .forms import (
     ClienteForm, ProveedorForm, ProductoForm,
@@ -308,32 +308,51 @@ class OrdenCompraDetailView(DetailView):
     template_name = "gestion/orden_detail.html"
     context_object_name = "orden"
 
-
 def orden_create_view(request):
     if request.method == "POST":
         form = OrdenCompraForm(request.POST)
         formset = DetalleCompraFormSet(request.POST, instance=OrdenCompra())
         if form.is_valid() and formset.is_valid():
-            try:
-                with transaction.atomic():
-                    orden = form.save(commit=False)
-                    orden.estado_pago = "pendiente"  # siempre inicia pendiente
-                    orden.save()
-                    formset.instance = orden
-                    formset.save()
-                messages.success(request, "Orden de pedido registrada.")
-                return redirect("gestion:orden_detail", pk=orden.pk)
-            except IntegrityError as e:
-                messages.error(
-                    request,
-                    f"No se pudo registrar: verifica que el proveedor y los "
-                    f"productos existan ({e}).",
-                )
+            proveedor = form.cleaned_data["id_proveedor"]
+
+            materias_validas = set(
+                ProveedorMateria.objects.filter(id_proveedor=proveedor)
+                .values_list("id_materia", flat=True)
+            )
+            error_materia = False
+            for detalle_form in formset:
+                if detalle_form.cleaned_data.get("DELETE"):
+                    continue
+                materia = detalle_form.cleaned_data.get("id_materia")
+                if materia and materia.pk not in materias_validas:
+                    detalle_form.add_error(
+                        "id_materia",
+                        f"{proveedor.nombre_proveedor} no tiene registrada "
+                        f"esa materia prima en su catálogo (proveedor_materia).",
+                    )
+                    error_materia = True
+
+            if not error_materia:
+                try:
+                    with transaction.atomic():
+                        orden = form.save(commit=False)
+                        orden.estado_pago = "pendiente"
+                        orden.save()
+                        formset.instance = orden
+                        formset.save()
+                    messages.success(request, "Orden de pedido registrada.")
+                    return redirect("gestion:orden_detail", pk=orden.pk)
+                except IntegrityError as e:
+                    messages.error(
+                        request,
+                        f"No se pudo registrar: verifica que el proveedor y "
+                        f"las materias primas existan ({e}).",
+                    )
     else:
         form = OrdenCompraForm()
         formset = DetalleCompraFormSet(instance=OrdenCompra())
     return render(request, "gestion/orden_form.html",
-                  {"form": form, "formset": formset})
+                    {"form": form, "formset": formset})
 
 
 def orden_actualizar_estado_view(request, pk):

@@ -80,7 +80,7 @@ class OrdenVentaForm(forms.ModelForm):
 DetalleVentaFormSet = inlineformset_factory(
     OrdenVenta, DetalleVenta,
     fields=["id_prod", "unidades", "precio_historico", "subtotal"],
-    extra=1, can_delete=True, min_num=1, validate_min=True,
+    extra=10, can_delete=True, min_num=1, validate_min=True,
 )
 
 
@@ -106,8 +106,8 @@ class OrdenCompraForm(forms.ModelForm):
 
 DetalleCompraFormSet = inlineformset_factory(
     OrdenCompra, DetalleCompra,
-    fields=["id_prod", "cantidad_prods", "precio_historico", "subtotal"],
-    extra=1, can_delete=True, min_num=1, validate_min=True,
+    fields=["id_materia", "cantidad_prods", "precio_historico", "subtotal"],
+    extra=10, can_delete=True, min_num=1, validate_min=True,
 )
 
 
