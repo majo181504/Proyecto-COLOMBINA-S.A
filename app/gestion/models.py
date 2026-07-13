@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # =========================================================
 #  TABLAS DE APOYO / CATÁLOGO (necesarias para los selects
@@ -318,7 +318,7 @@ class DetalleCompra(models.Model):
     id_materia = models.ForeignKey(
         MateriaPrima, on_delete=models.RESTRICT, db_column="id_materia"
     )
-    cantidad_prods = models.IntegerField()
+    cantidad_prods = models.IntegerField(validators=[MinValueValidator(1)])
     precio_historico = models.DecimalField(max_digits=12, decimal_places=2)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -373,7 +373,7 @@ class DetalleVenta(models.Model):
     id_prod = models.ForeignKey(
         Producto, on_delete=models.RESTRICT, db_column="id_prod"
     )
-    unidades = models.IntegerField()
+    unidades = models.IntegerField(validators=[MinValueValidator(1)])
     precio_historico = models.DecimalField(max_digits=12, decimal_places=2)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -409,10 +409,11 @@ class Inventario(models.Model):
     id_prod = models.ForeignKey(
         Producto, on_delete=models.RESTRICT, db_column="id_prod"
     )
-    cantidad_disponible = models.IntegerField()
-    stock_minimo = models.IntegerField()
+    cantidad_disponible = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(1000000)])
+    stock_minimo = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(10000)])
     demanda_diaria = models.IntegerField(
-        default=1, verbose_name="Demanda diaria (unidades/día)"
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(10000)],
+        verbose_name="Demanda diaria (unidades/día)"
     )
     fecha_actualizacion = models.DateTimeField()
 
