@@ -34,6 +34,7 @@ Puede visualizarse directamente a continuación:
 Proyecto-COLOMBINA-S.A/
 │
 ├── app/                # Proyecto Django
+├── backups/            # Backups de la base de datos
 ├── db/                 # Scripts SQL
 ├── docs/               # Documentación
 ├── templates/          # Plantillas HTML
