@@ -121,7 +121,7 @@ SELECT
 FROM inventario inv
 JOIN planta pl         ON inv.id_planta=pl.id_planta
 JOIN ciudad ci         ON pl.id_ciudad=ci.id_ciudad
-JOIN detalle_compra dc ON inv.id_prod=dc.id_prod
+JOIN detalle_compra dc ON inv.id_prod=inv.id_prod
 GROUP BY
     pl.tipo_planta,
     ci.nombre_ciudad
