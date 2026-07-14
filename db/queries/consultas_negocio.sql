@@ -121,7 +121,7 @@ SELECT
 FROM inventario inv
 JOIN planta pl         ON inv.id_planta=pl.id_planta
 JOIN ciudad ci         ON pl.id_ciudad=ci.id_ciudad
-JOIN detalle_compra dc ON inv.id_prod=inv.id_prod
+JOIN detalle_compra dc ON inv.id_prod=dc.id_prod
 GROUP BY
     pl.tipo_planta,
     ci.nombre_ciudad
@@ -471,6 +471,37 @@ ORDER BY margen_bruto_pct DESC;
 -- Decisión: ¿Qué marcas están creciendo y cuáles decreciendo?
 -- Permite identificar marcas que necesitan inversión en mercadeo.
 -- ============================================================
+WITH ventas_anio AS (
+    SELECT
+        p.marca_id,
+        EXTRACT(YEAR FROM ov.fecha_venta) AS anio,
+        ROUND(SUM(dv.subtotal), 2)        AS revenue
+    FROM orden_venta ov
+    JOIN detalle_venta dv ON ov.id_venta  = dv.id_venta
+    JOIN productos p      ON dv.id_prod   = p.id_producto
+    GROUP BY p.marca_id, EXTRACT(YEAR FROM ov.fecha_venta)
+)
+SELECT
+    m.nombre_marca,
+    ROUND(MAX(CASE WHEN anio = 2023 THEN revenue END), 2) AS revenue_2023,
+    ROUND(MAX(CASE WHEN anio = 2024 THEN revenue END), 2) AS revenue_2024,
+    ROUND(MAX(CASE WHEN anio = 2024 THEN revenue END) -
+          MAX(CASE WHEN anio = 2023 THEN revenue END), 2) AS variacion_absoluta,
+    ROUND((MAX(CASE WHEN anio = 2024 THEN revenue END) -
+           MAX(CASE WHEN anio = 2023 THEN revenue END)) * 100.0 /
+          NULLIF(MAX(CASE WHEN anio = 2023 THEN revenue END), 0), 2) AS crecimiento_pct,
+    CASE
+        WHEN MAX(CASE WHEN anio = 2024 THEN revenue END) >
+             MAX(CASE WHEN anio = 2023 THEN revenue END) THEN 'CRECIENDO'
+        WHEN MAX(CASE WHEN anio = 2024 THEN revenue END) <
+             MAX(CASE WHEN anio = 2023 THEN revenue END) THEN 'DECRECIENDO'
+        ELSE 'ESTABLE'
+    END AS tendencia
+FROM ventas_anio va
+JOIN marca m ON va.marca_id = m.id_marca
+GROUP BY m.nombre_marca
+ORDER BY crecimiento_pct DESC;
+
 
 
 -- ============================================================
