@@ -22,7 +22,7 @@ docs/
 
 Puede visualizarse directamente a continuación:
 
-![Modelo ER](docs/MER.png)
+![Modelo ER](docs/MER(3).png)
 
 
 
