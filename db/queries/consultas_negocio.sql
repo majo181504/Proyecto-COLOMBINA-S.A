@@ -108,24 +108,25 @@ ORDER BY monto_total DESC;
 
 
 -- ============================================================
--- CONSULTA 6: VALOR DE INVENTARIO POR PLANTA
--- Decisión: ¿Qué plantas concentran el mayor valor del inventario?
--- Ordena las plantas junto con la ciudad de ubicación,
--- ordenados por el valor estimado del inventario
+-- CONSULTA 6: CLIENTES SIN CRÉDITO CON ALTO VOLUMEN DE COMPRA
+-- Decisión: ¿A qué clientes le conviene a Colombina ofrecerles crédito?
+-- Identifica clientes que compran mucho pero pagan de contado.
 -- ============================================================
 SELECT
-    pl.tipo_planta,
-    ci.nombre_ciudad,
-    ROUND(SUM(inv.cantidad_disponible*dc.precio_historico),2)
-        AS valor_inventario
-FROM inventario inv
-JOIN planta pl         ON inv.id_planta=pl.id_planta
-JOIN ciudad ci         ON pl.id_ciudad=ci.id_ciudad
-JOIN detalle_compra dc ON inv.id_prod=dc.id_prod
-GROUP BY
-    pl.tipo_planta,
-    ci.nombre_ciudad
-ORDER BY valor_inventario DESC;
+    cl.id_cliente,
+    cl.nombre_cliente,
+    cl.tipo_cliente,
+    cl.canal_distribucion,
+    COUNT(DISTINCT ov.id_venta)  AS ordenes_totales,
+    ROUND(SUM(dv.subtotal),2)    AS revenue_total,
+    ROUND(AVG(dv.subtotal),2)    AS ticket_promedio
+FROM clientes cl
+JOIN orden_venta ov   ON cl.id_cliente = ov.id_cliente
+JOIN detalle_venta dv ON ov.id_venta   = dv.id_venta
+WHERE cl.credito_autorizado = FALSE
+GROUP BY cl.id_cliente, cl.nombre_cliente, cl.tipo_cliente, cl.canal_distribucion
+ORDER BY revenue_total DESC
+LIMIT 20;
 
 
 -- ============================================================
@@ -251,7 +252,7 @@ LIMIT 15;
 
 
 -- ============================================================
--- CONSULTA 2: PROYECCIÓN DE REVENUE PARA 2025
+-- CONSULTA 12: PROYECCIÓN DE REVENUE PARA 2025
 -- Decisión: ¿Cuánto podría facturar Colombina en 2025?
 
 -- ============================================================
@@ -290,45 +291,23 @@ SELECT
     , 2)                                               AS incremento_esperado_2025
 FROM revenue_anual;
 
-
 -- ============================================================
--- CONSULTA 13: RENTABILIDAD POR PLANTA (MARGEN BRUTO)
--- Decisión: ¿Cuál es la planta más rentable de Colombina?
--- Compara el costo de compras vs ingresos por ventas por planta.
+-- CONSULTA 13: SEGMENTACIÓN DE CLIENTES POR RÉGIMEN TRIBUTARIO Y CANAL
+-- Decisión: ¿Qué segmento de clientes concentra más participación,
+-- y en cuál de ellos falta más autorización de crédito o habeas data?
 -- ============================================================
-WITH costos_planta AS (
-    SELECT
-        i.id_planta,
-        SUM(dc.precio_historico * dc.cantidad_prods) AS costo_total_compras
-    FROM inventario i
-    JOIN detalle_compra dc ON dc.id_prod = i.id_prod
-    GROUP BY i.id_planta
-),
-ventas_planta AS (
-    SELECT
-        i.id_planta,
-        SUM(dv.subtotal) AS revenue_ventas
-    FROM inventario i
-    JOIN detalle_venta dv ON dv.id_prod = i.id_prod
-    GROUP BY i.id_planta
-)
 SELECT
-    pl.id_planta,
-    pl.tipo_planta,
-    ci.nombre_ciudad,
-    pa.nombre_pais,
-    ROUND(vp.revenue_ventas, 2)                              AS revenue_total,
-    ROUND(cp.costo_total_compras, 2)                         AS costo_total,
-    ROUND(vp.revenue_ventas - cp.costo_total_compras, 2)     AS margen_bruto,
-    ROUND((vp.revenue_ventas - cp.costo_total_compras) * 100.0
-          / NULLIF(vp.revenue_ventas, 0), 2)                 AS margen_bruto_pct
-FROM planta pl
-JOIN ciudad ci           ON pl.id_ciudad   = ci.id_ciudad
-JOIN pais pa             ON ci.id_pais     = pa.id_pais
-LEFT JOIN costos_planta cp ON pl.id_planta = cp.id_planta
-LEFT JOIN ventas_planta vp ON pl.id_planta = vp.id_planta
-WHERE vp.revenue_ventas IS NOT NULL
-ORDER BY margen_bruto_pct DESC;
+    cl.tipo_regimen_tributario,
+    cl.canal_distribucion,
+    COUNT(*)                                                    AS total_clientes,
+    COUNT(CASE WHEN cl.credito_autorizado THEN 1 END)          AS con_credito,
+    COUNT(CASE WHEN NOT cl.credito_autorizado THEN 1 END)      AS sin_credito,
+    ROUND(COUNT(CASE WHEN cl.credito_autorizado THEN 1 END)
+        * 100.0 / COUNT(*), 2)                                  AS pct_con_credito,
+    COUNT(CASE WHEN NOT cl.autorizacion_habeas_data THEN 1 END) AS pendientes_habeas_data
+FROM clientes cl
+GROUP BY cl.tipo_regimen_tributario, cl.canal_distribucion
+ORDER BY total_clientes DESC;
 
 
 -- ============================================================
@@ -428,42 +407,34 @@ JOIN ciudad ci         ON pr.id_ciudad     = ci.id_ciudad
 GROUP BY pr.id_proveedor, pr.nombre_proveedor, ci.nombre_ciudad
 ORDER BY monto_vencido DESC;
 
-
 -- ============================================================
--- CONSULTA 17: MARGEN BRUTO POR CATEGORÍA DE PRODUCTO
--- Decisión: ¿Qué categoría es más rentable para Colombina?
--- Cruza costos de compra vs precio de venta por categoría.
+-- CONSULTA 17: PROYECCIÓN DE DÍAS DE STOCK POR PRODUCTO Y PLANTA
+-- Decisión: ¿Qué productos se agotarán primero según su demanda real?
+-- Usa cantidad_disponible y demanda_diaria para estimar cuántos
+-- días de stock le quedan a cada producto por planta.
 -- ============================================================
-WITH costos AS (
-    SELECT
-        p.cate_id,
-        SUM(dc.precio_historico * dc.cantidad_prods) AS costo_total
-    FROM detalle_compra dc
-    JOIN productos p ON dc.id_prod = p.id_producto
-    GROUP BY p.cate_id
-),
-ventas AS (
-    SELECT
-        p.cate_id,
-        SUM(dv.subtotal)    AS revenue_total,
-        SUM(dv.unidades)    AS unidades_vendidas
-    FROM detalle_venta dv
-    JOIN productos p ON dv.id_prod = p.id_producto
-    GROUP BY p.cate_id
-)
 SELECT
-    c.nombre_categoria,
-    ROUND(v.revenue_total, 2)                               AS revenue_total,
-    ROUND(co.costo_total, 2)                                AS costo_total,
-    ROUND(v.revenue_total - co.costo_total, 2)              AS margen_bruto,
-    ROUND((v.revenue_total - co.costo_total) * 100.0
-          / NULLIF(v.revenue_total, 0), 2)                  AS margen_bruto_pct,
-    v.unidades_vendidas,
-    ROUND(v.revenue_total / NULLIF(v.unidades_vendidas,0),2) AS revenue_por_unidad
-FROM categoria c
-JOIN ventas  v  ON c.id_categoria = v.cate_id
-JOIN costos co  ON c.id_categoria = co.cate_id
-ORDER BY margen_bruto_pct DESC;
+    pl.tipo_planta,
+    ci.nombre_ciudad,
+    p.nombre_producto,
+    inv.cantidad_disponible,
+    inv.demanda_diaria,
+    ROUND(inv.cantidad_disponible::numeric /
+        NULLIF(inv.demanda_diaria,0), 1)          AS dias_estimados_stock,
+    CASE
+        WHEN inv.cantidad_disponible::numeric /
+             NULLIF(inv.demanda_diaria,0) <= 0     THEN 'AGOTADO'
+        WHEN inv.cantidad_disponible::numeric /
+             NULLIF(inv.demanda_diaria,0) < 5       THEN 'CRÍTICO'
+        WHEN inv.cantidad_disponible::numeric /
+             NULLIF(inv.demanda_diaria,0) <= 15      THEN 'ALERTA'
+        ELSE 'SEGURO'
+    END AS estado_stock
+FROM inventario inv
+JOIN planta pl   ON inv.id_planta = pl.id_planta
+JOIN ciudad ci   ON pl.id_ciudad  = ci.id_ciudad
+JOIN productos p ON inv.id_prod   = p.id_producto
+ORDER BY dias_estimados_stock ASC;
 
 
 -- ============================================================
